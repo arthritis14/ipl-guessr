@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IPL Guessr</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green:#5fc76b; --green-sh:#3f9a4c;
+    --yellow:#ffd23f; --yellow-sh:#d6a022;
+    --grey:#b8b4c4; --grey-sh:#8d899c;
+    --cream:#f8f1e3; --navy:#2d2a3d; --card-sh:#d9b878;
+    --panel:rgba(18,22,32,0.72);
+    --panel-border:rgba(255,255,255,0.10);
+    --text:#fff; --muted:#cfc9dd;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    min-height:100vh; color:var(--text);
+    font-family:'Nunito',-apple-system,sans-serif;
+    background:url('stadium_bg.jpg') center center / cover no-repeat fixed;
+    display:flex; flex-direction:column; align-items:center;
+    padding:28px 16px;
+  }
+  .card{
+    width:80%; max-width:1500px;
+    background:var(--panel);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    border:1px solid var(--panel-border);
+    border-radius:22px;
+    padding:22px 30px 30px;
+    box-shadow:0 24px 70px rgba(0,0,0,.5);
+  }
+  /* ---- Header ---- */
+  header{
+    display:flex; align-items:flex-start; justify-content:space-between; gap:14px;
+    flex-wrap:wrap; margin-bottom:18px;
+  }
+  .title-block h1{
+    font-family:'Baloo 2',cursive; font-weight:800; font-size:2.3rem; color:#fff;
+    letter-spacing:.5px; line-height:1.1; text-shadow:3px 3px 0 rgba(0,0,0,.35);
+  }
+  .title-block h1 span{color:var(--yellow);}
+  .title-block .subtitle{
+    font-family:'Nunito',sans-serif; font-weight:700; font-size:.85rem;
+    color:var(--muted); margin-top:4px;
+  }
+  .header-buttons{display:flex; gap:10px; flex-wrap:wrap;}
+  .btn-pill{
+    display:inline-flex; align-items:center; gap:7px; white-space:nowrap;
+    background:var(--cream); color:var(--navy); border:3px solid var(--navy);
+    border-radius:12px; padding:11px 16px; font-weight:800; font-family:'Baloo 2',cursive;
+    font-size:.88rem; cursor:pointer; box-shadow:4px 4px 0 var(--card-sh);
+    transition:transform .06s, box-shadow .06s;
+  }
+  .btn-pill:active{transform:translate(3px,3px); box-shadow:1px 1px 0 var(--card-sh);}
+  .btn-pill:disabled{opacity:.5; cursor:default;}
+  /* ---- Counter ---- */
+  #guess-counter{
+    font-family:'Baloo 2',cursive; font-weight:800; font-size:1rem; color:var(--muted);
+    text-align:center; margin-bottom:10px; letter-spacing:.5px;
+  }
+  /* ---- Search row ---- */
+  #search-wrap{position:relative; display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px;}
+  .search-field{position:relative; flex:1; min-width:200px;}
+  #search-input{
+    width:100%; padding:13px 18px; font-size:1rem; border-radius:12px;
+    border:3px solid var(--navy); background:var(--cream); color:var(--navy);
+    font-family:'Baloo 2',cursive; font-weight:700; box-shadow:4px 4px 0 var(--card-sh);
+  }
+  #search-input::placeholder{color:#a89c84;}
+  #search-input:disabled{opacity:.5;}
+  #guess-btn{
+    width:58px; flex-shrink:0; border:3px solid var(--navy); border-radius:12px;
+    background:var(--yellow); box-shadow:4px 4px 0 var(--card-sh); cursor:pointer;
+    font-size:1.4rem; color:var(--navy); transition:transform .06s, box-shadow .06s;
+  }
+  #guess-btn:active{transform:translate(3px,3px); box-shadow:1px 1px 0 var(--card-sh);}
+  #guess-btn:disabled{opacity:.45; cursor:default;}
+  #autocomplete{
+    position:absolute; top:60px; left:0; right:0;
+    background:var(--cream); color:var(--navy); border:3px solid var(--navy);
+    border-radius:12px; max-height:240px; overflow-y:auto; z-index:10; display:none;
+    box-shadow:4px 4px 0 var(--card-sh);
+  }
+  #autocomplete div{padding:11px 16px; cursor:pointer; font-weight:700; font-family:'Baloo 2',cursive; font-size:.92rem;}
+  #autocomplete div:hover, #autocomplete div.active{background:var(--yellow);}
+  /* ---- Message ---- */
+  #message{
+    min-height:30px; font-weight:800; text-align:center; font-family:'Baloo 2',cursive;
+    font-size:1.05rem; color:#fff; margin-bottom:6px;
+  }
+  /* ---- Grid ---- */
+  #grid{width:100%; overflow-x:auto; margin-top:6px;}
+  .row.header-row{
+    display:grid; grid-template-columns: 1.6fr .8fr 1.05fr 1.35fr .8fr .7fr 1fr .8fr;
+    gap:6px; min-width:660px; padding:0 16px 8px;
+    border-bottom:3px dotted rgba(255,255,255,0.35);
+    margin-bottom:12px; color:var(--muted); font-family:'Baloo 2',cursive;
+    font-weight:800; font-size:.7rem; text-transform:uppercase; letter-spacing:.6px;
+  }
+  .row.header-row div{text-align:center;}
+  .row.header-row div:first-child{text-align:left;}
+  .row.guess-row{
+    display:grid; grid-template-columns: 1.6fr .8fr 1.05fr 1.35fr .8fr .7fr 1fr .8fr;
+    gap:6px; align-items:center; min-width:660px;
+    background:var(--cream); border:3px solid var(--navy); border-radius:14px;
+    box-shadow:5px 5px 0 var(--card-sh); padding:13px 16px; margin-bottom:14px;
+  }
+  .row.guess-row.correct-row{
+    border-color:var(--green-sh); box-shadow:5px 5px 0 var(--green-sh);
+    animation:pop .4s ease;
+  }
+  @keyframes pop{0%{transform:scale(.94);}55%{transform:scale(1.025);}100%{transform:scale(1);}}
+  .cell{display:flex; align-items:center; justify-content:center;}
+  .cell.player-cell{justify-content:flex-start; flex-direction:column; align-items:flex-start; gap:3px; padding-left:2px;}
+  .pname{font-family:'Baloo 2',cursive; font-weight:800; font-size:1.02rem; color:var(--navy);}
+  .correct-badge{
+    display:inline-block; font-size:.6rem; font-weight:800; color:#fff;
+    background:var(--green-sh); border-radius:6px; padding:2px 7px; letter-spacing:.4px;
+    text-transform:uppercase; font-family:'Nunito',sans-serif;
+  }
+  .pill{
+    display:inline-flex; align-items:center; gap:5px; padding:4px 9px;
+    border:2.5px solid var(--navy); border-radius:8px; font-family:'Baloo 2',cursive;
+    font-weight:800; font-size:.85rem; color:var(--navy);
+  }
+  .pill.green{background:var(--green);}
+  .pill.yellow{background:var(--yellow);}
+  .pill.grey{background:var(--grey);}
+  .pill .ico{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:17px; height:17px; border-radius:4px; background:#fff; border:2px solid var(--navy);
+    font-size:.65rem; line-height:1;
+  }
+  .pill[data-tip]{cursor:help;}
+  #pill-tip{
+    position:fixed; display:none; max-width:230px;
+    background:var(--navy); color:#fff; padding:8px 12px; border-radius:8px;
+    font-family:'Nunito',sans-serif; font-weight:700; font-size:.78rem; line-height:1.35;
+    text-align:center; box-shadow:0 6px 16px rgba(0,0,0,.35); z-index:90; pointer-events:none;
+  }
+  #pill-tip.show{display:block;}
+  #pill-tip::after{
+    content:''; position:absolute; left:50%; transform:translateX(-50%);
+    border:6px solid transparent;
+  }
+  #pill-tip.pos-above::after{ bottom:-12px; border-top-color:var(--navy); }
+  #pill-tip.pos-below::after{ top:-12px; border-bottom-color:var(--navy); }
+  .arrow{font-size:1.25em; font-weight:800; line-height:1;}
+  .arrow.up{color:#2f6fd6;}
+  .arrow.down{color:#d6602f;}
+  .row.empty-row{
+    display:flex; align-items:center; justify-content:center; min-width:660px;
+    min-height:58px; margin-bottom:14px; border-radius:14px;
+    border:3px dashed rgba(255,255,255,0.22); background:rgba(255,255,255,0.04);
+    color:rgba(255,255,255,0.35); font-family:'Baloo 2',cursive; font-weight:800; font-size:1rem;
+  }
+  /* ---- Modals ---- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.55); display:none;
+    align-items:center; justify-content:center; z-index:100; padding:16px;
+  }
+  .overlay.show{display:flex;}
+  .modal{
+    background:var(--cream); color:var(--navy); border:3px solid var(--navy);
+    border-radius:18px; box-shadow:8px 8px 0 var(--card-sh);
+    padding:26px; max-width:440px; width:100%; max-height:85vh; overflow-y:auto; position:relative;
+    font-family:'Nunito',sans-serif;
+  }
+  .modal h2{
+    font-family:'Baloo 2',cursive; font-weight:800; font-size:1.5rem; text-align:center;
+    border-bottom:3px dotted var(--navy); padding-bottom:12px; margin-bottom:14px;
+  }
+  .modal p, .modal li{margin-bottom:9px; font-size:.92rem; color:var(--navy); font-weight:600; line-height:1.5;}
+  .modal b{font-weight:800;}
+  .modal .close{
+    position:absolute; top:8px; right:14px; cursor:pointer; font-size:1.7rem;
+    background:none; border:none; color:var(--navy); font-weight:800; line-height:1;
+  }
+  .legend{display:flex; align-items:center; gap:10px; margin:8px 0;}
+  .swatch{width:26px; height:26px; border-radius:6px; flex-shrink:0; border:2.5px solid var(--navy);}
+  .stats-grid{display:flex; justify-content:space-around; text-align:center; margin:18px 0;}
+  .stats-grid div{display:flex; flex-direction:column;}
+  .stats-grid .num{font-family:'Baloo 2',cursive; font-size:1.8rem; font-weight:800;}
+  .stats-grid .lbl{font-size:.68rem; color:#7d7392; text-transform:uppercase; letter-spacing:.5px; margin-top:2px; font-weight:800;}
+  /* ---- Winner card ---- */
+  .winner-card{
+    display:none;
+    background:var(--cream); color:var(--navy); border:3px solid var(--navy);
+    border-radius:18px; box-shadow:8px 8px 0 var(--card-sh);
+    padding:20px; margin-bottom:18px; position:relative;
+    font-family:'Nunito',sans-serif;
+    animation:winner-pop .35s ease-out;
+  }
+  .winner-card.show{display:block;}
+  @keyframes winner-pop{
+    from{opacity:0; transform:translateY(-12px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  .winner-card .close{
+    position:absolute; top:8px; right:14px; cursor:pointer; font-size:1.7rem;
+    background:none; border:none; color:var(--navy); font-weight:800; line-height:1;
+  }
+  .winner-main{display:flex; align-items:center; gap:20px; flex-wrap:wrap;}
+  .avatar-frame{
+    width:144px; height:144px; max-width:100%; flex-shrink:0; border-radius:14px; overflow:hidden;
+    border:3px solid var(--navy); box-shadow:4px 4px 0 var(--card-sh);
+    background-color:var(--cream); background-size:contain; background-position:center bottom; background-repeat:no-repeat;
+  }
+  .winner-info{flex:1; min-width:180px;}
+  .winner-label{font-size:.78rem; font-weight:800; color:#7d7392; text-transform:uppercase; letter-spacing:.5px;}
+  .winner-name{font-family:'Baloo 2',cursive; font-weight:800; font-size:1.5rem; margin:2px 0 8px;}
+  .winner-stats{display:grid; grid-template-columns:repeat(auto-fit, minmax(100px,1fr)); gap:6px 14px;}
+  .winner-stats div{display:flex; flex-direction:column;}
+  .winner-stats .lbl{font-size:.65rem; color:#7d7392; text-transform:uppercase; letter-spacing:.5px; font-weight:800;}
+  .winner-stats .val{font-weight:700; font-size:.9rem;}
+  .winner-result{
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    padding-left:20px; border-left:3px dotted var(--navy); min-width:140px;
+  }
+  .result-title{font-family:'Baloo 2',cursive; font-weight:800; font-size:1.15rem; text-align:center;}
+  .result-sub{font-size:.8rem; font-weight:700; color:#5d5570; text-align:center;}
+  .streak-box{display:flex; flex-direction:column; align-items:center; margin:4px 0;}
+  .streak-box .num{font-family:'Baloo 2',cursive; font-size:1.6rem; font-weight:800;}
+  .streak-box .lbl{font-size:.65rem; color:#7d7392; text-transform:uppercase; letter-spacing:.5px; font-weight:800;}
+  #winner-share-btn{
+    padding:11px 18px; border-radius:12px; border:3px solid var(--navy);
+    font-weight:800; font-size:.85rem; cursor:pointer; font-family:'Baloo 2',cursive;
+    box-shadow:4px 4px 0 var(--card-sh); background:var(--green); color:var(--navy);
+    transition:transform .06s, box-shadow .06s;
+  }
+  #winner-share-btn:active{transform:translate(3px,3px); box-shadow:1px 1px 0 var(--card-sh);}
+  @media (max-width:900px){
+    .card{width:94%; padding:16px 14px 22px;}
+    .title-block h1{font-size:1.7rem;}
+    .btn-pill{padding:9px 12px; font-size:.8rem;}
+    .winner-main{flex-direction:column; align-items:flex-start;}
+    .winner-result{
+      border-left:none; border-top:3px dotted var(--navy);
+      padding-left:0; padding-top:12px; width:100%;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+<header>
+  <div class="title-block">
+    <h1>IPL <span>Guessr</span></h1>
+    <p class="subtitle">Daily IPL player guessing game &middot; 2026 squads</p>
+  </div>
+  <div class="header-buttons">
+    <div class="btn-pill" id="stopwatch" style="cursor:default;">&#9201;&#65039; 00:00:00</div>
+    <button class="btn-pill" id="help-btn">&#10067; Help</button>
+    <button class="btn-pill" id="stats-btn">&#128202; Stats</button>
+  </div>
+</header>
+
+<div class="winner-card" id="winner-card">
+  <button class="close" id="winner-close-btn">&times;</button>
+  <div class="winner-main">
+    <div class="avatar-frame" id="winner-avatar"></div>
+    <div class="winner-info">
+      <div class="winner-label" id="winner-label">Today's Player is...</div>
+      <div class="winner-name" id="winner-name"></div>
+      <div class="winner-stats" id="winner-stats"></div>
+    </div>
+    <div class="winner-result">
+      <div class="result-title" id="winner-result-title"></div>
+      <div class="result-sub" id="winner-result-sub"></div>
+      <div class="streak-box"><span class="num" id="winner-streak">0</span><span class="lbl">Streak</span></div>
+      <button id="winner-share-btn">&#10145; Share</button>
+    </div>
+  </div>
+</div>
+
+<div id="guess-counter">Guess 0 / 8</div>
+
+<div id="search-wrap">
+  <div class="search-field">
+    <input type="text" id="search-input" placeholder="Start guessing..." autocomplete="off">
+    <div id="autocomplete"></div>
+  </div>
+  <button id="guess-btn" title="Guess">&#10148;</button>
+</div>
+
+<div id="message"></div>
+
+<div id="grid">
+  <div class="row header-row">
+    <div>Player</div><div>Team</div><div>Country</div><div>Role</div>
+    <div>Bat Hand</div><div>Age</div><div>Cap Status</div><div>Seasons</div>
+  </div>
+  <div id="guesses"></div>
+  <div id="empty-rows"></div>
+</div>
+</div>
+
+<div class="overlay" id="help-overlay">
+  <div class="modal">
+    <button class="close" data-close="help-overlay">&times;</button>
+    <h2>How to Play</h2>
+    <p>Guess today's mystery IPL player in <b>8 tries</b>.</p>
+    <p>Each guess fills a row of <b>8 columns</b>: the player's name, then <b>Team, Country, Role, Bat Hand, Age, Cap Status</b> and <b>Seasons</b>. The last 7 are colour-coded against today's answer:</p>
+    <div class="legend"><div class="swatch" style="background:var(--green)"></div><p style="margin:0;"><b>Green &#10003;</b> &mdash; exact match. e.g. you guess a CSK player and the answer plays for CSK too.</p></div>
+    <div class="legend"><div class="swatch" style="background:var(--yellow)"></div><p style="margin:0;"><b>Yellow &#8776;</b> &mdash; close, but not exact:</p></div>
+    <ul style="margin:-4px 0 10px 36px; padding-left:20px;">
+      <li><b>Country</b>: a different country, but the same continent (e.g. India and Sri Lanka are both Asia).</li>
+      <li><b>Role</b>: a similar playing position. Yellow appears between:
+        <ul style="margin:6px 0 0; padding-left:20px; list-style-type:circle;">
+          <li><b>Batter</b> &harr; All-Rounder</li>
+          <li><b>All-Rounder</b> &harr; Batter, Fast Bowler or Spin Bowler</li>
+          <li><b>Fast Bowler</b> &harr; All-Rounder or Spin Bowler</li>
+          <li><b>Spin Bowler</b> &harr; All-Rounder or Fast Bowler</li>
+        </ul>
+      </li>
+      <li><b>Age</b> or <b>Seasons</b>: within 3 of the answer.</li>
+    </ul>
+    <div class="legend"><div class="swatch" style="background:var(--grey)"></div><p style="margin:0;"><b>Grey &#10007;</b> &mdash; no match on any of the above.</p></div>
+    <p>For <b>Age</b> and <b>Seasons</b>, an arrow shows which way the answer lies: <span style="color:#2f6fd6; font-weight:800;">&#11014; higher</span> than your guess, or <span style="color:#d6602f; font-weight:800;">&#11015; lower</span>.</p>
+  </div>
+</div>
+
+<div class="overlay" id="stats-overlay">
+  <div class="modal">
+    <button class="close" data-close="stats-overlay">&times;</button>
+    <h2>Statistics</h2>
+    <div class="stats-grid">
+      <div><span class="num" id="stat-played">0</span><span class="lbl">Played</span></div>
+      <div><span class="num" id="stat-pct">0</span><span class="lbl">Win %</span></div>
+      <div><span class="num" id="stat-streak">0</span><span class="lbl">Streak</span></div>
+      <div><span class="num" id="stat-max">0</span><span class="lbl">Max Streak</span></div>
+    </div>
+  </div>
+<script>
+const PLAYERS = [{"n":"Ruturaj Gaikwad","tm":"CSK","co":"India","cont":"Asia","ty":"Batter","bh":"Right","dob":"1997-01-31","cap":true,"seas":8},{"n":"Dewald Brevis","tm":"CSK","co":"South Africa","cont":"Africa","ty":"Batter","bh":"Right","dob":"2004-05-08","cap":true,"seas":4},{"n":"Sarfaraz Khan","tm":"CSK","co":"India","cont":"Asia","ty":"Batter","bh":"Right","dob":"1997-10-22","cap":true,"seas":8},{"n":"MS Dhoni","tm":"CSK","co":"India","cont":"Asia","ty":"Batter","bh":"Right","dob":"1981-07-07","cap":true,"seas":19},{"n":"Sanju Samson","tm":"CSK","co":"India","cont":"Asia","ty":"Batter","bh":"Right","dob":"1994-11-28","cap":true,"seas":14},{"n":"Shivam Dube","tm":"CSK","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Left","dob":"1993-06-26","cap":true,"seas":8},{"n":"Jamie Overton","tm":"CSK","co":"England","cont":"Europe","ty":"All-Rounder","bh":"Right","dob":"1994-08-10","cap":true,"seas":2},{"n":"Prashant Veer","tm":"CSK","co":"West Indies","cont":"Caribbean","ty":"All-Rounder","bh":"Right","dob":"1993-06-24","cap":true,"seas":3},{"n":"Matthew Short","tm":"CSK","co":"Australia","cont":"Oceania","ty":"All-Rounder","bh":"Right","dob":"1997-12-13","cap":true,"seas":3},{"n":"Khaleel Ahmed","tm":"CSK","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Left","dob":"1997-12-05","cap":true,"seas":9},{"n":"Noor Ahmad","tm":"CSK","co":"Afghanistan","cont":"Asia","ty":"Spin Bowler","bh":"Right","dob":"2005-01-10","cap":true,"seas":4},{"n":"Mukesh Choudhary","tm":"CSK","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"1996-01-03","cap":false,"seas":5},{"n":"Akeal Hosein","tm":"CSK","co":"West Indies","cont":"Caribbean","ty":"Spin Bowler","bh":"Left","dob":"1993-09-23","cap":true,"seas":4},{"n":"Rahul Chahar","tm":"CSK","co":"India","cont":"Asia","ty":"Spin Bowler","bh":"Right","dob":"1999-08-14","cap":true,"seas":9},{"n":"Matt Henry","tm":"CSK","co":"New Zealand","cont":"Oceania","ty":"Fast Bowler","bh":"Right","dob":"1991-12-14","cap":true,"seas":4},{"n":"Spencer Johnson","tm":"CSK","co":"Australia","cont":"Oceania","ty":"Fast Bowler","bh":"Right","dob":"1996-07-10","cap":true,"seas":3},{"n":"Anshul Kamboj","tm":"CSK","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"2000-12-19","cap":false,"seas":3},{"n":"Rohit Sharma","tm":"MI","co":"India","cont":"Asia","ty":"Batter","bh":"Right","dob":"1987-04-30","cap":true,"seas":19},{"n":"Suryakumar Yadav","tm":"MI","co":"India","cont":"Asia","ty":"Batter","bh":"Right","dob":"1990-09-22","cap":true,"seas":14},{"n":"Quinton de Kock","tm":"MI","co":"South Africa","cont":"Africa","ty":"Batter","bh":"Left","dob":"1992-12-17","cap":true,"seas":13},{"n":"Ryan Rickelton","tm":"MI","co":"South Africa","cont":"Africa","ty":"Batter","bh":"Left","dob":"1999-10-05","cap":true,"seas":3},{"n":"Sherfane Rutherford","tm":"MI","co":"West Indies","cont":"Caribbean","ty":"All-Rounder","bh":"Right","dob":"1998-05-15","cap":true,"seas":5},{"n":"Tilak Varma","tm":"MI","co":"India","cont":"Asia","ty":"Batter","bh":"Left","dob":"2002-11-08","cap":true,"seas":4},{"n":"Hardik Pandya","tm":"MI","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Right","dob":"1993-10-11","cap":true,"seas":12},{"n":"Naman Dhir","tm":"MI","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Right","dob":"2002-01-09","cap":false,"seas":4},{"n":"Mitchell Santner","tm":"MI","co":"New Zealand","cont":"Oceania","ty":"All-Rounder","bh":"Left","dob":"1992-02-05","cap":true,"seas":6},{"n":"Corbin Bosch","tm":"MI","co":"South Africa","cont":"Africa","ty":"All-Rounder","bh":"Right","dob":"1995-09-25","cap":true,"seas":2},{"n":"Will Jacks","tm":"MI","co":"England","cont":"Europe","ty":"All-Rounder","bh":"Right","dob":"1999-11-21","cap":true,"seas":4},{"n":"Shardul Thakur","tm":"MI","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Right","dob":"1991-08-16","cap":true,"seas":12},{"n":"Jasprit Bumrah","tm":"MI","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"1993-12-06","cap":true,"seas":12},{"n":"Trent Boult","tm":"MI","co":"New Zealand","cont":"Oceania","ty":"Fast Bowler","bh":"Right","dob":"1989-07-22","cap":true,"seas":10},{"n":"Deepak Chahar","tm":"MI","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"1992-08-07","cap":true,"seas":11},{"n":"Virat Kohli","tm":"RCB","co":"India","cont":"Asia","ty":"Batter","bh":"Right","dob":"1988-11-05","cap":true,"seas":18},{"n":"Rajat Patidar","tm":"RCB","co":"India","cont":"Asia","ty":"Batter","bh":"Right","dob":"1993-06-01","cap":true,"seas":6},{"n":"Devdutt Padikkal","tm":"RCB","co":"India","cont":"Asia","ty":"Batter","bh":"Left","dob":"2000-07-07","cap":true,"seas":7},{"n":"Phil Salt","tm":"RCB","co":"England","cont":"Europe","ty":"Batter","bh":"Right","dob":"1996-08-28","cap":true,"seas":4},{"n":"Jitesh Sharma","tm":"RCB","co":"India","cont":"Asia","ty":"Batter","bh":"Right","dob":"1993-10-18","cap":true,"seas":5},{"n":"Krunal Pandya","tm":"RCB","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Left","dob":"1991-03-24","cap":true,"seas":11},{"n":"Tim David","tm":"RCB","co":"Singapore","cont":"Asia","ty":"All-Rounder","bh":"Right","dob":"1996-03-16","cap":true,"seas":5},{"n":"Romario Shepherd","tm":"RCB","co":"West Indies","cont":"Caribbean","ty":"All-Rounder","bh":"Right","dob":"1997-12-26","cap":true,"seas":5},{"n":"Jacob Bethell","tm":"RCB","co":"England","cont":"Europe","ty":"All-Rounder","bh":"Left","dob":"2004-11-23","cap":true,"seas":2},{"n":"Venkatesh Iyer","tm":"RCB","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Left","dob":"1994-12-25","cap":true,"seas":6},{"n":"Josh Hazlewood","tm":"RCB","co":"Australia","cont":"Oceania","ty":"Fast Bowler","bh":"Right","dob":"1990-01-08","cap":true,"seas":7},{"n":"Bhuvneshwar Kumar","tm":"RCB","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"1990-02-05","cap":true,"seas":15},{"n":"Yash Dayal","tm":"RCB","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Left","dob":"1999-09-16","cap":true,"seas":5},{"n":"Nuwan Thushara","tm":"RCB","co":"Sri Lanka","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"2000-05-25","cap":true,"seas":3},{"n":"Suyash Sharma","tm":"RCB","co":"India","cont":"Asia","ty":"Spin Bowler","bh":"Right","dob":"2002-08-22","cap":false,"seas":4},{"n":"Rasikh Salam","tm":"RCB","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"2002-09-16","cap":false,"seas":5},{"n":"Jacob Duffy","tm":"RCB","co":"New Zealand","cont":"Oceania","ty":"Fast Bowler","bh":"Right","dob":"1996-04-12","cap":true,"seas":2},{"n":"Ajinkya Rahane","tm":"KKR","co":"India","cont":"Asia","ty":"Batter","bh":"Right","dob":"1988-06-06","cap":true,"seas":17},{"n":"Rinku Singh","tm":"KKR","co":"India","cont":"Asia","ty":"Batter","bh":"Left","dob":"1997-10-12","cap":true,"seas":7},{"n":"Angkrish Raghuvanshi","tm":"KKR","co":"India","cont":"Asia","ty":"Batter","bh":"Right","dob":"2005-09-22","cap":false,"seas":3},{"n":"Manish Pandey","tm":"KKR","co":"India","cont":"Asia","ty":"Batter","bh":"Right","dob":"1989-09-10","cap":true,"seas":17},{"n":"Rovman Powell","tm":"KKR","co":"West Indies","cont":"Caribbean","ty":"Batter","bh":"Right","dob":"1993-09-24","cap":true,"seas":6},{"n":"Finn Allen","tm":"KKR","co":"New Zealand","cont":"Oceania","ty":"Batter","bh":"Right","dob":"1999-04-29","cap":true,"seas":4},{"n":"Tim Seifert","tm":"KKR","co":"New Zealand","cont":"Oceania","ty":"Batter","bh":"Right","dob":"1995-04-12","cap":true,"seas":3},{"n":"Cameron Green","tm":"KKR","co":"Australia","cont":"Oceania","ty":"All-Rounder","bh":"Right","dob":"1999-06-03","cap":true,"seas":4},{"n":"Ramandeep Singh","tm":"KKR","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Right","dob":"1999-12-14","cap":true,"seas":5},{"n":"Anukul Roy","tm":"KKR","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Left","dob":"2000-03-23","cap":false,"seas":6},{"n":"Rachin Ravindra","tm":"KKR","co":"New Zealand","cont":"Oceania","ty":"All-Rounder","bh":"Left","dob":"2000-02-23","cap":true,"seas":3},{"n":"Sunil Narine","tm":"KKR","co":"West Indies","cont":"Caribbean","ty":"All-Rounder","bh":"Right","dob":"1988-05-26","cap":true,"seas":15},{"n":"Matheesha Pathirana","tm":"KKR","co":"Sri Lanka","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"2003-06-19","cap":true,"seas":4},{"n":"Varun Chakravarthy","tm":"KKR","co":"India","cont":"Asia","ty":"Spin Bowler","bh":"Right","dob":"1991-08-29","cap":true,"seas":7},{"n":"Harshit Rana","tm":"KKR","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"2002-07-25","cap":true,"seas":4},{"n":"Akash Deep","tm":"KKR","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"1997-03-11","cap":true,"seas":5},{"n":"Vaibhav Arora","tm":"KKR","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"2000-10-23","cap":false,"seas":4},{"n":"Kartik Tyagi","tm":"KKR","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"2001-04-15","cap":false,"seas":6},{"n":"Umran Malik","tm":"KKR","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"2000-11-22","cap":true,"seas":5},{"n":"Heinrich Klaasen","tm":"SRH","co":"South Africa","cont":"Africa","ty":"Batter","bh":"Right","dob":"1991-07-30","cap":true,"seas":8},{"n":"Travis Head","tm":"SRH","co":"Australia","cont":"Oceania","ty":"Batter","bh":"Left","dob":"1993-12-29","cap":true,"seas":5},{"n":"Ishan Kishan","tm":"SRH","co":"India","cont":"Asia","ty":"Batter","bh":"Left","dob":"1998-07-18","cap":true,"seas":10},{"n":"Pat Cummins","tm":"SRH","co":"Australia","cont":"Oceania","ty":"All-Rounder","bh":"Right","dob":"1993-05-08","cap":true,"seas":10},{"n":"Abhishek Sharma","tm":"SRH","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Left","dob":"2000-09-04","cap":true,"seas":7},{"n":"Nitish Kumar Reddy","tm":"SRH","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Right","dob":"2004-05-16","cap":true,"seas":3},{"n":"Harshal Patel","tm":"SRH","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"1990-07-23","cap":true,"seas":13},{"n":"Liam Livingstone","tm":"SRH","co":"England","cont":"Europe","ty":"All-Rounder","bh":"Right","dob":"1993-08-04","cap":true,"seas":7},{"n":"Kamindu Mendis","tm":"SRH","co":"Sri Lanka","cont":"Asia","ty":"All-Rounder","bh":"Left","dob":"1999-09-01","cap":true,"seas":2},{"n":"Jaydev Unadkat","tm":"SRH","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Left","dob":"1991-10-20","cap":true,"seas":14},{"n":"Shivam Mavi","tm":"SRH","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"1999-01-01","cap":true,"seas":8},{"n":"Adam Zampa","tm":"SRH","co":"Australia","cont":"Oceania","ty":"Spin Bowler","bh":"Right","dob":"1992-03-31","cap":true,"seas":5},{"n":"KL Rahul","tm":"DC","co":"India","cont":"Asia","ty":"Batter","bh":"Right","dob":"1992-04-18","cap":true,"seas":14},{"n":"Karun Nair","tm":"DC","co":"India","cont":"Asia","ty":"Batter","bh":"Right","dob":"1991-12-06","cap":true,"seas":14},{"n":"David Miller","tm":"DC","co":"South Africa","cont":"Africa","ty":"Batter","bh":"Left","dob":"1989-06-10","cap":true,"seas":16},{"n":"Pathum Nissanka","tm":"DC","co":"Sri Lanka","cont":"Asia","ty":"Batter","bh":"Right","dob":"1999-03-18","cap":true,"seas":2},{"n":"Prithvi Shaw","tm":"DC","co":"India","cont":"Asia","ty":"Batter","bh":"Right","dob":"1999-11-09","cap":true,"seas":9},{"n":"Tristan Stubbs","tm":"DC","co":"South Africa","cont":"Africa","ty":"All-Rounder","bh":"Right","dob":"2001-07-07","cap":true,"seas":4},{"n":"Axar Patel","tm":"DC","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Left","dob":"1994-01-20","cap":true,"seas":13},{"n":"Sameer Rizvi","tm":"DC","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Right","dob":"2005-04-28","cap":false,"seas":3},{"n":"Ashutosh Sharma","tm":"DC","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Right","dob":"2000-08-21","cap":false,"seas":3},{"n":"Nitish Rana","tm":"DC","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Left","dob":"1994-12-27","cap":false,"seas":10},{"n":"Mitchell Starc","tm":"DC","co":"Australia","cont":"Oceania","ty":"Fast Bowler","bh":"Left","dob":"1990-01-30","cap":true,"seas":4},{"n":"T Natarajan","tm":"DC","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Left","dob":"1991-05-27","cap":true,"seas":9},{"n":"Kuldeep Yadav","tm":"DC","co":"India","cont":"Asia","ty":"Spin Bowler","bh":"Left","dob":"1994-12-14","cap":true,"seas":12},{"n":"Mukesh Kumar","tm":"DC","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"1997-03-27","cap":true,"seas":5},{"n":"Dushmantha Chameera","tm":"DC","co":"Sri Lanka","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"1991-03-11","cap":true,"seas":3},{"n":"Lungi Ngidi","tm":"DC","co":"South Africa","cont":"Africa","ty":"Fast Bowler","bh":"Right","dob":"1996-03-29","cap":true,"seas":5},{"n":"Kyle Jamieson","tm":"DC","co":"New Zealand","cont":"Oceania","ty":"Fast Bowler","bh":"Right","dob":"1994-12-30","cap":true,"seas":5},{"n":"Jake Fraser-McGurk","tm":"DC","co":"Australia","cont":"Oceania","ty":"Batter","bh":"Right","dob":"2002-06-03","cap":true,"seas":3},{"n":"Yashasvi Jaiswal","tm":"RR","co":"India","cont":"Asia","ty":"Batter","bh":"Left","dob":"2001-12-28","cap":true,"seas":6},{"n":"Riyan Parag","tm":"RR","co":"India","cont":"Asia","ty":"Batter","bh":"Right","dob":"2002-11-10","cap":true,"seas":7},{"n":"Vaibhav Suryavanshi","tm":"RR","co":"India","cont":"Asia","ty":"Batter","bh":"Right","dob":"2011-03-27","cap":false,"seas":2},{"n":"Shimron Hetmyer","tm":"RR","co":"West Indies","cont":"Caribbean","ty":"All-Rounder","bh":"Left","dob":"1996-12-26","cap":true,"seas":8},{"n":"Dhruv Jurel","tm":"RR","co":"India","cont":"Asia","ty":"Batter","bh":"Right","dob":"2001-08-26","cap":true,"seas":3},{"n":"Donovan Ferreira","tm":"RR","co":"South Africa","cont":"Africa","ty":"Batter","bh":"Right","dob":"1998-05-22","cap":true,"seas":2},{"n":"Lhuan-dre Pretorius","tm":"RR","co":"South Africa","cont":"Africa","ty":"Batter","bh":"Right","dob":"2004-06-09","cap":true,"seas":2},{"n":"Ravindra Jadeja","tm":"RR","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Left","dob":"1988-12-06","cap":true,"seas":17},{"n":"Sam Curran","tm":"RR","co":"England","cont":"Europe","ty":"All-Rounder","bh":"Left","dob":"1998-06-03","cap":true,"seas":8},{"n":"Jofra Archer","tm":"RR","co":"England","cont":"Europe","ty":"Fast Bowler","bh":"Right","dob":"1995-04-01","cap":true,"seas":7},{"n":"Ravi Bishnoi","tm":"RR","co":"India","cont":"Asia","ty":"Spin Bowler","bh":"Right","dob":"2000-09-05","cap":true,"seas":6},{"n":"Adam Milne","tm":"RR","co":"New Zealand","cont":"Oceania","ty":"Fast Bowler","bh":"Right","dob":"1992-04-13","cap":true,"seas":4},{"n":"Sandeep Sharma","tm":"RR","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"1993-11-10","cap":true,"seas":14},{"n":"Nandre Burger","tm":"RR","co":"South Africa","cont":"Africa","ty":"Fast Bowler","bh":"Left","dob":"2000-01-10","cap":true,"seas":3},{"n":"Shubman Gill","tm":"GT","co":"India","cont":"Asia","ty":"Batter","bh":"Right","dob":"1999-09-08","cap":true,"seas":9},{"n":"Jos Buttler","tm":"GT","co":"England","cont":"Europe","ty":"Batter","bh":"Right","dob":"1990-09-08","cap":true,"seas":10},{"n":"Sai Sudharsan","tm":"GT","co":"India","cont":"Asia","ty":"Batter","bh":"Left","dob":"2002-01-06","cap":true,"seas":4},{"n":"Glenn Phillips","tm":"GT","co":"New Zealand","cont":"Oceania","ty":"All-Rounder","bh":"Right","dob":"1997-08-08","cap":true,"seas":4},{"n":"Washington Sundar","tm":"GT","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Right","dob":"1999-10-02","cap":true,"seas":10},{"n":"Shahrukh Khan","tm":"GT","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Right","dob":"1995-07-19","cap":false,"seas":6},{"n":"Nishant Sindhu","tm":"GT","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Right","dob":"2004-03-06","cap":false,"seas":3},{"n":"Sai Kishore","tm":"GT","co":"India","cont":"Asia","ty":"Spin Bowler","bh":"Left","dob":"1997-09-25","cap":false,"seas":6},{"n":"Jason Holder","tm":"GT","co":"West Indies","cont":"Caribbean","ty":"All-Rounder","bh":"Right","dob":"1991-11-05","cap":true,"seas":9},{"n":"Rahul Tewatia","tm":"GT","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Left","dob":"1993-09-28","cap":true,"seas":12},{"n":"Rashid Khan","tm":"GT","co":"Afghanistan","cont":"Asia","ty":"Spin Bowler","bh":"Right","dob":"1998-09-20","cap":true,"seas":10},{"n":"Mohammed Siraj","tm":"GT","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"1994-03-13","cap":true,"seas":10},{"n":"Kagiso Rabada","tm":"GT","co":"South Africa","cont":"Africa","ty":"Fast Bowler","bh":"Right","dob":"1995-05-25","cap":true,"seas":8},{"n":"Prasidh Krishna","tm":"GT","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"1996-02-19","cap":true,"seas":7},{"n":"Ishant Sharma","tm":"GT","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"1988-09-02","cap":true,"seas":17},{"n":"Rishabh Pant","tm":"LSG","co":"India","cont":"Asia","ty":"Batter","bh":"Left","dob":"1997-10-04","cap":true,"seas":11},{"n":"Nicholas Pooran","tm":"LSG","co":"West Indies","cont":"Caribbean","ty":"Batter","bh":"Left","dob":"1995-10-02","cap":true,"seas":9},{"n":"Aiden Markram","tm":"LSG","co":"South Africa","cont":"Africa","ty":"All-Rounder","bh":"Right","dob":"1994-10-04","cap":true,"seas":5},{"n":"Josh Inglis","tm":"LSG","co":"Australia","cont":"Oceania","ty":"Batter","bh":"Right","dob":"1995-03-04","cap":true,"seas":4},{"n":"Mitchell Marsh","tm":"LSG","co":"Australia","cont":"Oceania","ty":"All-Rounder","bh":"Right","dob":"1991-10-20","cap":true,"seas":10},{"n":"Abdul Samad","tm":"LSG","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Right","dob":"2001-02-06","cap":false,"seas":6},{"n":"Shahbaz Ahmed","tm":"LSG","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Left","dob":"1996-07-12","cap":true,"seas":7},{"n":"Wanindu Hasaranga","tm":"LSG","co":"Sri Lanka","cont":"Asia","ty":"All-Rounder","bh":"Right","dob":"1997-07-29","cap":true,"seas":6},{"n":"Ayush Badoni","tm":"LSG","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Right","dob":"2000-08-25","cap":false,"seas":5},{"n":"Mohammed Shami","tm":"LSG","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"1990-09-03","cap":true,"seas":14},{"n":"Avesh Khan","tm":"LSG","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"1996-12-13","cap":true,"seas":9},{"n":"Mayank Yadav","tm":"LSG","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"2002-02-24","cap":true,"seas":4},{"n":"Anrich Nortje","tm":"LSG","co":"South Africa","cont":"Africa","ty":"Fast Bowler","bh":"Right","dob":"1993-11-16","cap":true,"seas":7},{"n":"Arjun Tendulkar","tm":"LSG","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Left","dob":"1999-03-24","cap":false,"seas":5},{"n":"Mohsin Khan","tm":"LSG","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Left","dob":"2000-10-23","cap":true,"seas":6},{"n":"Shreyas Iyer","tm":"PBKS","co":"India","cont":"Asia","ty":"Batter","bh":"Right","dob":"1994-12-06","cap":true,"seas":11},{"n":"Prabhsimran Singh","tm":"PBKS","co":"India","cont":"Asia","ty":"Batter","bh":"Right","dob":"2001-01-03","cap":false,"seas":7},{"n":"Nehal Wadhera","tm":"PBKS","co":"India","cont":"Asia","ty":"Batter","bh":"Right","dob":"1999-09-04","cap":false,"seas":5},{"n":"Shashank Singh","tm":"PBKS","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Right","dob":"1991-12-04","cap":false,"seas":4},{"n":"Priyansh Arya","tm":"PBKS","co":"India","cont":"Asia","ty":"Batter","bh":"Left","dob":"2003-10-05","cap":false,"seas":3},{"n":"Suryansh Shedge","tm":"PBKS","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Right","dob":"2001-09-15","cap":false,"seas":3},{"n":"Marcus Stoinis","tm":"PBKS","co":"Australia","cont":"Oceania","ty":"All-Rounder","bh":"Right","dob":"1989-08-16","cap":true,"seas":10},{"n":"Harpreet Brar","tm":"PBKS","co":"India","cont":"Asia","ty":"All-Rounder","bh":"Left","dob":"1997-08-29","cap":true,"seas":7},{"n":"Marco Jansen","tm":"PBKS","co":"South Africa","cont":"Africa","ty":"All-Rounder","bh":"Left","dob":"2000-06-01","cap":true,"seas":5},{"n":"Azmatullah Omarzai","tm":"PBKS","co":"Afghanistan","cont":"Asia","ty":"All-Rounder","bh":"Right","dob":"2002-10-14","cap":true,"seas":3},{"n":"Cooper Connolly","tm":"PBKS","co":"Australia","cont":"Oceania","ty":"All-Rounder","bh":"Left","dob":"2002-01-01","cap":true,"seas":1},{"n":"Arshdeep Singh","tm":"PBKS","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"1999-02-05","cap":true,"seas":7},{"n":"Yuzvendra Chahal","tm":"PBKS","co":"India","cont":"Asia","ty":"Spin Bowler","bh":"Right","dob":"1990-07-23","cap":true,"seas":15},{"n":"Lockie Ferguson","tm":"PBKS","co":"New Zealand","cont":"Oceania","ty":"Fast Bowler","bh":"Right","dob":"1991-06-13","cap":true,"seas":8},{"n":"Vyshak Vijaykumar","tm":"PBKS","co":"India","cont":"Asia","ty":"Fast Bowler","bh":"Right","dob":"1996-07-10","cap":false,"seas":4},{"n":"Xavier Bartlett","tm":"PBKS","co":"Australia","cont":"Oceania","ty":"Fast Bowler","bh":"Right","dob":"2000-07-06","cap":true,"seas":2},{"n":"Allah Ghazanfar","tm":"MI","co":"Afghanistan","cont":"Asia","ty":"Spin Bowler","bh":"Right","dob":"2006-02-26","cap":true,"seas":3}];
+const MAX_GUESSES = 8;
+const ROLE_YELLOW = {
+  'Batter': ['All-Rounder'],
+  'All-Rounder': ['Batter','Fast Bowler','Spin Bowler'],
+  'Fast Bowler': ['All-Rounder','Spin Bowler'],
+  'Spin Bowler': ['All-Rounder','Fast Bowler']
+};
+const START_DATE = new Date(2026,5,10); // Day 0 = 10 June 2026
+const COLS = ['team','country','type','bat','age','capped','seasons'];
+const STORAGE_KEY = 'iplguessr_v1';
+
+// ---- Seeded shuffle so everyone gets the same daily order ----
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function seededShuffle(arr, seed){
+  const a = arr.slice();
+  const rand = mulberry32(seed);
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(rand()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+const ORDER = seededShuffle([...Array(PLAYERS.length).keys()], 20260610);
+
+function getDayIndex(){
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.floor((today - START_DATE) / 86400000);
+}
+function getAnswer(){
+  const day = getDayIndex();
+  const idx = ORDER[((day % ORDER.length) + ORDER.length) % ORDER.length];
+  return PLAYERS[idx];
+}
+
+// ---- Helpers ----
+function calcAge(dob){
+  const today = new Date();
+  const b = new Date(dob);
+  let age = today.getFullYear() - b.getFullYear();
+  const m = today.getMonth() - b.getMonth();
+  if(m < 0 || (m === 0 && today.getDate() < b.getDate())) age--;
+  return age;
+}
+
+// ---- Player avatars (custom team artwork) ----
+// [skin 0-4: Very Fair / Fair / Wheatish / Brown / Dark, hair 0-2: Black / Brown / Blonde]
+// -> image at avatars/{TEAM}_{skin}_{hair}.png
+const PLAYER_AVATAR = {
+  'Ruturaj Gaikwad':[1,0],'Dewald Brevis':[1,1],'Sarfaraz Khan':[2,0],'MS Dhoni':[2,0],'Sanju Samson':[2,0],
+  'Shivam Dube':[2,0],'Jamie Overton':[1,1],'Prashant Veer':[2,0],'Matthew Short':[1,1],'Khaleel Ahmed':[2,0],
+  'Noor Ahmad':[2,0],'Mukesh Choudhary':[2,0],'Akeal Hosein':[2,0],'Rahul Chahar':[1,0],'Matt Henry':[1,1],
+  'Spencer Johnson':[0,2],'Anshul Kamboj':[2,0],'Rohit Sharma':[2,0],'Suryakumar Yadav':[2,0],'Quinton de Kock':[1,1],
+  'Ryan Rickelton':[1,1],'Sherfane Rutherford':[4,0],'Tilak Varma':[3,0],'Hardik Pandya':[2,0],'Naman Dhir':[2,0],
+  'Mitchell Santner':[1,1],'Corbin Bosch':[1,1],'Will Jacks':[1,1],'Shardul Thakur':[2,0],'Jasprit Bumrah':[2,0],
+  'Trent Boult':[1,1],'Deepak Chahar':[1,0],'Virat Kohli':[1,0],'Rajat Patidar':[2,0],'Devdutt Padikkal':[1,0],
+  'Phil Salt':[0,1],'Jitesh Sharma':[2,0],'Krunal Pandya':[2,0],'Tim David':[2,0],'Romario Shepherd':[4,0],
+  'Jacob Bethell':[4,0],'Venkatesh Iyer':[2,0],'Josh Hazlewood':[1,1],'Bhuvneshwar Kumar':[1,0],'Yash Dayal':[2,0],
+  'Nuwan Thushara':[2,0],'Suyash Sharma':[2,0],'Rasikh Salam':[1,0],'Jacob Duffy':[1,1],'Ajinkya Rahane':[2,0],
+  'Rinku Singh':[2,0],'Angkrish Raghuvanshi':[2,0],'Manish Pandey':[2,0],'Rovman Powell':[4,0],'Finn Allen':[0,2],
+  'Tim Seifert':[1,1],'Cameron Green':[1,1],'Ramandeep Singh':[2,0],'Anukul Roy':[2,0],'Rachin Ravindra':[2,0],
+  'Sunil Narine':[4,0],'Matheesha Pathirana':[2,0],'Varun Chakravarthy':[2,0],'Harshit Rana':[2,0],'Akash Deep':[2,0],
+  'Vaibhav Arora':[2,0],'Kartik Tyagi':[2,0],'Umran Malik':[1,0],'Heinrich Klaasen':[1,2],'Travis Head':[0,1],
+  'Ishan Kishan':[2,0],'Pat Cummins':[1,1],'Abhishek Sharma':[2,0],'Nitish Kumar Reddy':[3,0],'Harshal Patel':[2,0],
+  'Liam Livingstone':[0,2],'Kamindu Mendis':[2,0],'Jaydev Unadkat':[2,0],'Shivam Mavi':[2,0],'Adam Zampa':[1,1],
+  'KL Rahul':[2,0],'Karun Nair':[3,0],'David Miller':[1,1],'Pathum Nissanka':[2,0],'Prithvi Shaw':[2,0],
+  'Tristan Stubbs':[1,1],'Axar Patel':[2,0],'Sameer Rizvi':[2,0],'Ashutosh Sharma':[2,0],'Nitish Rana':[2,0],
+  'Mitchell Starc':[1,1],'T Natarajan':[3,0],'Kuldeep Yadav':[2,0],'Mukesh Kumar':[2,0],'Dushmantha Chameera':[2,0],
+  'Lungi Ngidi':[4,0],'Kyle Jamieson':[1,1],'Jake Fraser-McGurk':[1,1],'Yashasvi Jaiswal':[2,0],'Riyan Parag':[2,0],
+  'Vaibhav Suryavanshi':[2,0],'Shimron Hetmyer':[4,0],'Dhruv Jurel':[2,0],'Donovan Ferreira':[2,0],'Lhuan-dre Pretorius':[0,2],
+  'Ravindra Jadeja':[2,0],'Sam Curran':[1,1],'Jofra Archer':[4,0],'Ravi Bishnoi':[2,0],'Adam Milne':[1,1],
+  'Sandeep Sharma':[2,0],'Nandre Burger':[1,1],'Shubman Gill':[1,0],'Jos Buttler':[1,1],'Sai Sudharsan':[3,0],
+  'Glenn Phillips':[1,1],'Washington Sundar':[3,0],'Shahrukh Khan':[2,0],'Nishant Sindhu':[2,0],'Sai Kishore':[3,0],
+  'Jason Holder':[4,0],'Rahul Tewatia':[2,0],'Rashid Khan':[2,0],'Mohammed Siraj':[2,0],'Kagiso Rabada':[4,0],
+  'Prasidh Krishna':[2,0],'Ishant Sharma':[2,0],'Rishabh Pant':[2,0],'Nicholas Pooran':[2,0],'Aiden Markram':[1,1],
+  'Josh Inglis':[1,1],'Mitchell Marsh':[1,1],'Abdul Samad':[2,0],'Shahbaz Ahmed':[2,0],'Wanindu Hasaranga':[2,0],
+  'Ayush Badoni':[2,0],'Mohammed Shami':[2,0],'Avesh Khan':[2,0],'Mayank Yadav':[2,0],'Anrich Nortje':[1,1],
+  'Arjun Tendulkar':[1,0],'Mohsin Khan':[2,0],'Shreyas Iyer':[2,0],'Prabhsimran Singh':[2,0],'Nehal Wadhera':[2,0],
+  'Shashank Singh':[2,0],'Priyansh Arya':[2,0],'Suryansh Shedge':[2,0],'Marcus Stoinis':[1,1],'Harpreet Brar':[2,0],
+  'Marco Jansen':[0,1],'Azmatullah Omarzai':[2,0],'Cooper Connolly':[0,1],'Arshdeep Singh':[2,0],'Yuzvendra Chahal':[2,0],
+  'Lockie Ferguson':[1,1],'Vyshak Vijaykumar':[2,0],'Xavier Bartlett':[1,1],'Allah Ghazanfar':[2,0]
+};
+const DEFAULT_AVATAR = [2,0]; // S3 Wheatish skin, Black hair (uncapped/unidentified players)
+function avatarFile(player){
+  const av = PLAYER_AVATAR[player.n] || DEFAULT_AVATAR;
+  return `avatars/${player.tm}_${av[0]}_${av[1]}.png`;
+}
+
+// ---- Tooltip helpers ----
+const TEAM_FULL = {
+  CSK:'Chennai Super Kings', DC:'Delhi Capitals', GT:'Gujarat Titans', KKR:'Kolkata Knight Riders',
+  LSG:'Lucknow Super Giants', MI:'Mumbai Indians', PBKS:'Punjab Kings', RCB:'Royal Challengers Bengaluru',
+  RR:'Rajasthan Royals', SRH:'Sunrisers Hyderabad'
+};
+function roleArticle(role){ return role==='All-Rounder' ? 'an' : 'a'; }
+function roleHint(guessTy, answerTy){
+  const BOWL = ['Fast Bowler','Spin Bowler','All-Rounder'];
+  const BAT = ['Batter','All-Rounder'];
+  if(BOWL.includes(guessTy) && BOWL.includes(answerTy)){
+    if(guessTy!=='All-Rounder' && answerTy!=='All-Rounder' && guessTy!==answerTy){
+      return `The player bowls, but not as ${roleArticle(guessTy)} ${guessTy}.`;
+    }
+    return `The player bowls, like ${roleArticle(guessTy)} ${guessTy}.`;
+  }
+  if(BAT.includes(guessTy) && BAT.includes(answerTy)){
+    return `The player also bats, like ${roleArticle(guessTy)} ${guessTy}.`;
+  }
+  return `The player's role is close to ${roleArticle(guessTy)} ${guessTy}.`;
+}
+function escapeAttr(s){
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ---- Comparison engine ----
+function compareGuess(guess, answer){
+  const r = {};
+  r.team = {val: guess.tm, status: guess.tm===answer.tm ? 'green':'grey'};
+  r.team.tip = (r.team.status==='green')
+    ? `Plays for ${TEAM_FULL[answer.tm] || answer.tm}.`
+    : `Doesn't play for ${TEAM_FULL[guess.tm] || guess.tm}.`;
+
+  let cStatus = guess.co===answer.co ? 'green' : (guess.cont===answer.cont ? 'yellow':'grey');
+  r.country = {val: guess.co, status: cStatus};
+  if(cStatus==='green') r.country.tip = `The player is from ${answer.co}.`;
+  else if(cStatus==='yellow') r.country.tip = `The player is from the same continent as ${guess.co}.`;
+  else r.country.tip = `The player is from a different continent to ${guess.co}.`;
+
+  let tStatus;
+  if(guess.ty===answer.ty) tStatus='green';
+  else{
+    const adj = ROLE_YELLOW[answer.ty] || [];
+    tStatus = adj.includes(guess.ty) ? 'yellow':'grey';
+  }
+  r.type = {val: guess.ty, status: tStatus};
+  if(tStatus==='green') r.type.tip = `The player is ${roleArticle(guess.ty)} ${guess.ty}.`;
+  else if(tStatus==='yellow') r.type.tip = roleHint(guess.ty, answer.ty);
+  else r.type.tip = `The player isn't ${roleArticle(guess.ty)} ${guess.ty}, and the roles aren't closely related.`;
+
+  r.bat = {val: guess.bh, status: guess.bh===answer.bh ? 'green':'grey'};
+  r.bat.tip = (r.bat.status==='green')
+    ? `The player bats ${guess.bh.toLowerCase()}-handed.`
+    : `The player doesn't bat ${guess.bh.toLowerCase()}-handed.`;
+
+  const gAge = calcAge(guess.dob), aAge = calcAge(answer.dob);
+  const ageStatus = gAge===aAge ? 'green' : (Math.abs(gAge-aAge)<=3 ? 'yellow':'grey');
+  const ageArrow = gAge<aAge ? 'up' : (gAge>aAge ? 'down':'');
+  r.age = {val: gAge, status: ageStatus, arrow: ageArrow};
+  if(ageStatus==='green') r.age.tip = `The player is exactly ${gAge} years old.`;
+  else if(ageStatus==='yellow') r.age.tip = (ageArrow==='up') ? `The player is a little older than ${gAge} (within 3 years).` : `The player is a little younger than ${gAge} (within 3 years).`;
+  else r.age.tip = (ageArrow==='up') ? `The player is a lot older than ${gAge} (more than 3 years).` : `The player is a lot younger than ${gAge} (more than 3 years).`;
+
+  r.capped = {val: guess.cap?'Capped':'Uncapped', status: guess.cap===answer.cap ? 'green':'grey'};
+  r.capped.tip = answer.cap
+    ? `The player has played international cricket for their country.`
+    : `The player hasn't played international cricket for their country yet.`;
+
+  const sStatus = guess.seas===answer.seas ? 'green' : (Math.abs(guess.seas-answer.seas)<=3 ? 'yellow':'grey');
+  const sArrow = guess.seas<answer.seas ? 'up' : (guess.seas>answer.seas ? 'down':'');
+  r.seasons = {val: guess.seas, status: sStatus, arrow: sArrow};
+  if(sStatus==='green') r.seasons.tip = `The player has played ${guess.seas} IPL season${guess.seas===1?'':'s'}.`;
+  else if(sStatus==='yellow') r.seasons.tip = (sArrow==='up') ? `The player has played more IPL seasons than ${guess.seas} (within 3).` : `The player has played fewer IPL seasons than ${guess.seas} (within 3).`;
+  else r.seasons.tip = (sArrow==='up') ? `The player has played a lot more IPL seasons than ${guess.seas}.` : `The player has played a lot fewer IPL seasons than ${guess.seas}.`;
+
+  return r;
+}
+
+// ---- Game state ----
+let ANSWER = getAnswer();
+const DAY_INDEX = getDayIndex();
+let guesses = [];
+let gameOver = false;
+let won = false;
+
+// ---- Stopwatch ----
+let timerInterval = null;
+let elapsedSeconds = 0;
+function formatTime(total){
+  const h = Math.floor(total/3600);
+  const m = Math.floor((total%3600)/60);
+  const s = total%60;
+  return [h,m,s].map(v=>String(v).padStart(2,'0')).join(':');
+}
+function updateTimerDisplay(){
+  const el = document.getElementById('stopwatch');
+  if(el) el.textContent = '\u23F1\uFE0F ' + formatTime(elapsedSeconds);
+}
+function startTimer(){
+  stopTimer();
+  elapsedSeconds = 0;
+  updateTimerDisplay();
+  timerInterval = setInterval(()=>{ elapsedSeconds++; updateTimerDisplay(); }, 1000);
+}
+function stopTimer(){
+  if(timerInterval){ clearInterval(timerInterval); timerInterval = null; }
+}
+
+function loadState(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(!raw) return null;
+  try{ return JSON.parse(raw); } catch(e){ return null; }
+}
+function recordResult(){
+  const data = loadState() || {};
+  if(!data.stats) data.stats = {played:0, wins:0, streak:0, maxStreak:0};
+  if(data.recordedDay !== DAY_INDEX){
+    data.stats.played++;
+    if(won){
+      data.stats.wins++;
+      data.stats.streak++;
+      data.stats.maxStreak = Math.max(data.stats.maxStreak, data.stats.streak);
+    } else {
+      data.stats.streak = 0;
+    }
+    data.recordedDay = DAY_INDEX;
+  }
+  data.lastDay = DAY_INDEX;
+  data.lastGuesses = guesses.map(g=>g.name);
+  data.lastGameOver = gameOver;
+  data.lastWon = won;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+function saveProgress(){
+  const data = loadState() || {stats:{played:0,wins:0,streak:0,maxStreak:0}};
+  data.lastDay = DAY_INDEX;
+  data.lastGuesses = guesses.map(g=>g.name);
+  data.lastGameOver = gameOver;
+  data.lastWon = won;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+// ---- DOM refs ----
+const guessesEl = document.getElementById('guesses');
+const emptyRowsEl = document.getElementById('empty-rows');
+const counterEl = document.getElementById('guess-counter');
+const messageEl = document.getElementById('message');
+const searchInput = document.getElementById('search-input');
+const guessBtn = document.getElementById('guess-btn');
+const autocompleteEl = document.getElementById('autocomplete');
+
+// ---- Rendering ----
+function renderAttrCell(c){
+  const icoMap = {green:'&#10003;', yellow:'&#8776;', grey:'&#10007;'};
+  let html = '<span class="pill ' + c.status + '" data-tip="' + escapeAttr(c.tip||'') + '" tabindex="0">' + c.val;
+  if(c.arrow==='up') html += '<span class="arrow up">&#11014;</span>';
+  if(c.arrow==='down') html += '<span class="arrow down">&#11015;</span>';
+  html += '<span class="ico">' + icoMap[c.status] + '</span></span>';
+  return html;
+}
+function renderGuessRow(name, result, isCorrect){
+  const row = document.createElement('div');
+  row.className = 'row guess-row' + (isCorrect ? ' correct-row' : '');
+
+  const playerCell = document.createElement('div');
+  playerCell.className = 'cell player-cell';
+  playerCell.innerHTML = '<span class="pname">' + name + '</span>' +
+    (isCorrect ? '<span class="correct-badge">&#10003; Correct</span>' : '');
+  row.appendChild(playerCell);
+
+  COLS.forEach(col=>{
+    const c = result[col];
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.innerHTML = renderAttrCell(c);
+    row.appendChild(cell);
+  });
+
+  if(isCorrect) guessesEl.prepend(row);
+  else guessesEl.appendChild(row);
+}
+function renderEmptyRows(){
+  emptyRowsEl.innerHTML = '';
+  for(let i=guesses.length+1;i<=MAX_GUESSES;i++){
+    const row = document.createElement('div');
+    row.className = 'row empty-row';
+    row.textContent = i;
+    emptyRowsEl.appendChild(row);
+  }
+}
+function updateCounter(){
+  counterEl.textContent = `Guess ${guesses.length} / ${MAX_GUESSES}`;
+}
+
+// ---- Pill tooltips ----
+const pillTip = document.createElement('div');
+pillTip.id = 'pill-tip';
+document.body.appendChild(pillTip);
+let pinnedTip = null;
+function showPillTip(pill){
+  const tip = pill.getAttribute('data-tip');
+  if(!tip) return;
+  pillTip.textContent = tip;
+  pillTip.classList.remove('pos-above','pos-below');
+  pillTip.classList.add('show');
+  const r = pill.getBoundingClientRect();
+  const tw = pillTip.offsetWidth, th = pillTip.offsetHeight;
+  let left = r.left + r.width/2 - tw/2;
+  left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+  let top = r.top - th - 12;
+  if(top < 8){
+    top = r.bottom + 12;
+    pillTip.classList.add('pos-below');
+  } else {
+    pillTip.classList.add('pos-above');
+  }
+  pillTip.style.left = left + 'px';
+  pillTip.style.top = top + 'px';
+}
+function hidePillTip(){
+  pillTip.classList.remove('show');
+  pinnedTip = null;
+}
+guessesEl.addEventListener('mouseover', e=>{
+  const pill = e.target.closest('.pill[data-tip]');
+  if(pill) showPillTip(pill);
+});
+guessesEl.addEventListener('mouseout', e=>{
+  if(pinnedTip) return;
+  const pill = e.target.closest('.pill[data-tip]');
+  if(pill) hidePillTip();
+});
+guessesEl.addEventListener('focusin', e=>{
+  const pill = e.target.closest('.pill[data-tip]');
+  if(pill) showPillTip(pill);
+});
+guessesEl.addEventListener('focusout', e=>{
+  if(pinnedTip) return;
+  const pill = e.target.closest('.pill[data-tip]');
+  if(pill) hidePillTip();
+});
+guessesEl.addEventListener('click', e=>{
+  const pill = e.target.closest('.pill[data-tip]');
+  if(!pill) return;
+  if(pinnedTip===pill){ hidePillTip(); }
+  else { showPillTip(pill); pinnedTip = pill; }
+});
+document.addEventListener('click', e=>{
+  if(pinnedTip && !e.target.closest('.pill[data-tip]')) hidePillTip();
+});
+window.addEventListener('scroll', hidePillTip, true);
+window.addEventListener('resize', hidePillTip);
+
+// ---- Autocomplete ----
+let acIndex = -1;
+searchInput.addEventListener('input', ()=>{
+  const q = searchInput.value.trim().toLowerCase();
+  autocompleteEl.innerHTML = '';
+  acIndex = -1;
+  if(!q){ autocompleteEl.style.display='none'; return; }
+  const guessedNames = new Set(guesses.map(g=>g.name));
+  const matches = PLAYERS.filter(p=>p.n.toLowerCase().includes(q) && !guessedNames.has(p.n)).slice(0,8);
+  if(matches.length===0){ autocompleteEl.style.display='none'; return; }
+  matches.forEach(p=>{
+    const div = document.createElement('div');
+    div.textContent = `${p.n} (${p.tm})`;
+    div.addEventListener('click', ()=>submitGuess(p));
+    autocompleteEl.appendChild(div);
+  });
+  autocompleteEl.style.display='block';
+});
+searchInput.addEventListener('keydown', (e)=>{
+  const items = autocompleteEl.querySelectorAll('div');
+  if(e.key==='ArrowDown'){ e.preventDefault(); acIndex=Math.min(acIndex+1, items.length-1); updateActive(items); }
+  else if(e.key==='ArrowUp'){ e.preventDefault(); acIndex=Math.max(acIndex-1,0); updateActive(items); }
+  else if(e.key==='Enter'){
+    e.preventDefault();
+    if(acIndex>=0 && items[acIndex]) items[acIndex].click();
+    else if(items.length>=1) items[0].click();
+  }
+});
+function updateActive(items){
+  items.forEach((it,i)=>it.classList.toggle('active', i===acIndex));
+  if(items[acIndex]) items[acIndex].scrollIntoView({block:'nearest'});
+}
+document.addEventListener('click',(e)=>{
+  if(!searchInput.contains(e.target) && !autocompleteEl.contains(e.target)) autocompleteEl.style.display='none';
+});
+
+// ---- Guess button ----
+guessBtn.addEventListener('click', ()=>{
+  const items = autocompleteEl.querySelectorAll('div');
+  if(acIndex>=0 && items[acIndex]) items[acIndex].click();
+  else if(items.length>=1) items[0].click();
+});
+
+// ---- Guess submission ----
+function submitGuess(player){
+  if(gameOver) return;
+  const result = compareGuess(player, ANSWER);
+  const isCorrect = player.n === ANSWER.n;
+  guesses.push({name: player.n, result, correct:isCorrect});
+  renderGuessRow(player.n, result, isCorrect);
+  updateCounter();
+  renderEmptyRows();
+  searchInput.value = '';
+  autocompleteEl.innerHTML = '';
+  autocompleteEl.style.display = 'none';
+
+  if(isCorrect){
+    won = true; gameOver = true;
+    endGame();
+  } else if(guesses.length >= MAX_GUESSES){
+    gameOver = true;
+    endGame();
+  } else {
+    saveProgress();
+  }
+}
+
+function endGame(){
+  stopTimer();
+  searchInput.disabled = true;
+  guessBtn.disabled = true;
+  recordResult();
+  if(won){
+    messageEl.textContent = `Correct! It was ${ANSWER.n}.`;
+    messageEl.style.color = 'var(--green)';
+  } else {
+    messageEl.textContent = `Out of guesses! It was ${ANSWER.n}.`;
+    messageEl.style.color = 'var(--muted)';
+  }
+  showWinnerCard();
+}
+
+// ---- "Today's Player" winner card ----
+function populateWinnerCard(){
+  document.getElementById('winner-avatar').style.backgroundImage = `url('${avatarFile(ANSWER)}')`;
+  document.getElementById('winner-name').textContent = ANSWER.n;
+  document.getElementById('winner-label').textContent = "Today's Player is...";
+  const stats = [
+    ['Team', ANSWER.tm], ['Country', ANSWER.co], ['Role', ANSWER.ty],
+    ['Bat Hand', ANSWER.bh + '-handed'], ['Age', calcAge(ANSWER.dob)],
+    ['Cap Status', ANSWER.cap ? 'Capped' : 'Uncapped'], ['Seasons', ANSWER.seas]
+  ];
+  document.getElementById('winner-stats').innerHTML = stats.map(([lbl,val])=>
+    `<div><span class="lbl">${lbl}</span><span class="val">${val}</span></div>`
+  ).join('');
+  const titleEl = document.getElementById('winner-result-title');
+  const subEl = document.getElementById('winner-result-sub');
+  if(won){
+    titleEl.textContent = 'You Won!';
+    titleEl.style.color = 'var(--green-sh)';
+    subEl.textContent = `Guessed in ${guesses.length}/${MAX_GUESSES}`;
+  } else {
+    titleEl.textContent = 'Out of Guesses';
+    titleEl.style.color = 'var(--navy)';
+    subEl.textContent = 'Better luck next time';
+  }
+  const data = loadState() || {};
+  const s = data.stats || {streak:0};
+  document.getElementById('winner-streak').textContent = s.streak;
+}
+function showWinnerCard(){
+  populateWinnerCard();
+  document.getElementById('winner-card').classList.add('show');
+}
+function hideWinnerCard(){
+  document.getElementById('winner-card').classList.remove('show');
+}
+document.getElementById('winner-close-btn').addEventListener('click', hideWinnerCard);
+document.getElementById('winner-share-btn').addEventListener('click', shareResult);
+
+// ---- Modals ----
+function openModal(id){ document.getElementById(id).classList.add('show'); renderStats(); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('[data-close]').forEach(btn=>{
+  btn.addEventListener('click', ()=>closeModal(btn.dataset.close));
+});
+document.querySelectorAll('.overlay').forEach(ov=>{
+  ov.addEventListener('click',(e)=>{ if(e.target===ov) ov.classList.remove('show'); });
+});
+document.getElementById('help-btn').addEventListener('click', ()=>openModal('help-overlay'));
+document.getElementById('stats-btn').addEventListener('click', ()=>openModal('stats-overlay'));
+
+// ---- Stats ----
+function renderStats(){
+  const data = loadState() || {};
+  const s = data.stats || {played:0,wins:0,streak:0,maxStreak:0};
+  document.getElementById('stat-played').textContent = s.played;
+  document.getElementById('stat-pct').textContent = s.played ? Math.round(100*s.wins/s.played) : 0;
+  document.getElementById('stat-streak').textContent = s.streak;
+  document.getElementById('stat-max').textContent = s.maxStreak;
+}
+
+// ---- Share ----
+function shareResult(){
+  const emojiMap = {green:'\u{1F7E9}', yellow:'\u{1F7E8}', grey:'\u{2B1C}'};
+  const label = '#'+DAY_INDEX;
+  let text = `IPL Guessr ${label} ${won ? guesses.length+'/8' : 'X/8'}\n\n`;
+  guesses.forEach(g=>{
+    text += COLS.map(c=>emojiMap[g.result[c].status]).join('') + '\n';
+  });
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn = document.getElementById('winner-share-btn');
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(()=>btn.textContent=orig, 1500);
+  });
+}
+
+// ---- Init: restore today's progress if any ----
+function init(){
+  updateCounter();
+  const data = loadState();
+  if(data && data.lastDay===DAY_INDEX && data.lastGuesses && data.lastGuesses.length){
+    data.lastGuesses.forEach(name=>{
+      if(name === ANSWER.n) return;
+      const p = PLAYERS.find(pl=>pl.n===name);
+      if(p){
+        const result = compareGuess(p, ANSWER);
+        guesses.push({name:p.n, result, correct:false});
+        renderGuessRow(p.n, result, false);
+      }
+    });
+    if(data.lastWon){
+      const result = compareGuess(ANSWER, ANSWER);
+      guesses.push({name:ANSWER.n, result, correct:true});
+      renderGuessRow(ANSWER.n, result, true);
+    }
+    updateCounter();
+    renderEmptyRows();
+    gameOver = !!data.lastGameOver;
+    won = !!data.lastWon;
+    if(gameOver){
+      searchInput.disabled = true;
+      guessBtn.disabled = true;
+      if(won){ messageEl.textContent = `Correct! It was ${ANSWER.n}.`; messageEl.style.color='var(--green)'; }
+      else { messageEl.textContent = `Out of guesses! It was ${ANSWER.n}.`; messageEl.style.color='var(--muted)'; }
+      showWinnerCard();
+    }
+  } else {
+    renderEmptyRows();
+  }
+  if(!gameOver) startTimer();
+  openModal('help-overlay');
+}
+init();
+
+</script>
+</body>
+</html>
