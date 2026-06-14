@@ -287,6 +287,29 @@
       padding-left:0; padding-top:12px; width:100%;
     }
   }
+  /* ---- Mobile guess grid: chip layout, label above each value ---- */
+  @media (max-width:640px){
+    .row.header-row{display:none;}
+    .row.guess-row{
+      grid-template-columns:repeat(auto-fit, minmax(66px,1fr));
+      gap:10px 6px; align-items:start; min-width:0; padding:12px;
+    }
+    .row.empty-row{min-width:0;}
+    .cell{flex-direction:column; gap:4px; min-width:0;}
+    .cell.player-cell{
+      grid-column:1 / -1; flex-direction:row; justify-content:space-between;
+      align-items:center; flex-wrap:wrap; padding-left:0; gap:6px;
+    }
+    .pname{font-size:.95rem; overflow-wrap:anywhere; min-width:0;}
+    .cell[data-label]::before{
+      content:attr(data-label); font-size:.56rem; font-weight:800; text-transform:uppercase;
+      letter-spacing:.4px; color:#9b8fae;
+    }
+    .pill{font-size:.7rem; padding:3px 6px; gap:3px; border-width:2px; white-space:normal; overflow-wrap:anywhere; word-break:break-word; text-align:center; line-height:1.2; max-width:100%;}
+    .pill .ico{width:14px; height:14px; font-size:.55rem;}
+    .arrow{font-size:1em;}
+    .correct-badge{font-size:.55rem; padding:2px 6px;}
+  }
 </style>
 </head>
 <body>
@@ -382,6 +405,7 @@ const ROLE_YELLOW = {
 };
 const START_DATE = new Date(2026,5,10); // Day 0 = 10 June 2026
 const COLS = ['team','country','type','bat','age','capped','seasons'];
+const COL_LABELS = {team:'Team', country:'Country', type:'Role', bat:'Bat Hand', age:'Age', capped:'Cap Status', seasons:'Seasons'};
 const STORAGE_KEY = 'iplguessr_v1';
 
 // ---- Seeded shuffle so everyone gets the same daily order ----
@@ -637,6 +661,7 @@ function renderGuessRow(name, result, isCorrect){
     const c = result[col];
     const cell = document.createElement('div');
     cell.className = 'cell';
+    cell.setAttribute('data-label', COL_LABELS[col]);
     cell.innerHTML = renderAttrCell(c);
     row.appendChild(cell);
   });
