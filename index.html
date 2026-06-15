@@ -318,7 +318,7 @@
 <header>
   <div class="title-block">
     <h1>IPL <span>Guessr</span></h1>
-    <p class="subtitle">Wordle for IPL players &middot; Guess today's mystery IPL player in 8 tries</p>
+    <p class="subtitle">Wordle for <span style="color:var(--yellow); font-weight:800;">2026</span> IPL players &middot; Guess today's mystery player in 8 tries</p>
   </div>
   <div class="header-buttons">
     <div class="btn-pill" id="stopwatch" style="cursor:default;">&#9201;&#65039; 00:00:00</div>
@@ -877,7 +877,7 @@ const howtoOverlay = document.getElementById('howto-overlay');
 const howtoDoneBtn = document.getElementById('howto-done-btn');
 const howtoPanel = document.getElementById('howto-panel');
 const HOWTO_RULES_HTML = `
-  <p>Guess today's mystery IPL player in <b>8 tries</b>.</p>
+  <p>Guess today's mystery <b>2026 IPL</b> player in <b>8 tries</b>.</p>
   <p>Each guess fills a row of <b>8 columns</b>: the player's name, then <b>Team, Country, Role, Bat Hand, Age, Cap Status</b> and <b>Seasons</b> &mdash; the last 7 are colour-coded against today's answer:</p>
   <div class="legend"><div class="swatch" style="background:var(--green)"></div><p style="margin:0;"><b>Green &#10003;</b> &mdash; exact match.</p></div>
   <div class="legend"><div class="swatch" style="background:var(--yellow)"></div><p style="margin:0;"><b>Yellow &#8776;</b> &mdash; close, not exact:</p></div>
