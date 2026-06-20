@@ -3,7 +3,56 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IPL Guessr</title>
+<title>IPL Guessr – Guess Today's 2026 IPL Player | Free Daily Cricket Puzzle</title>
+<meta name="description" content="IPL Guessr is a free daily cricket puzzle inspired by Wordle. Guess the mystery 2026 IPL player in 8 tries using team, country, role, batting hand, age and seasons clues. A new player every day.">
+<link rel="canonical" href="https://iplguessr.com/">
+<meta name="robots" content="index, follow">
+<meta name="keywords" content="IPL Guessr, IPL 2026, IPL player quiz, cricket Wordle, IPL quiz game, guess the cricket player, IPL puzzle, daily cricket game">
+<meta name="author" content="IPL Guessr">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="IPL Guessr – Guess Today's 2026 IPL Player">
+<meta property="og:description" content="Free daily cricket puzzle. Guess the mystery 2026 IPL player in 8 tries using team, country, role, age and seasons clues. A new challenge every day.">
+<meta property="og:url" content="https://iplguessr.com/">
+<meta property="og:image" content="https://iplguessr.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="IPL Guessr">
+<meta property="og:locale" content="en_IN">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="IPL Guessr – Guess Today's 2026 IPL Player">
+<meta name="twitter:description" content="Free daily cricket Wordle. Guess the mystery 2026 IPL player in 8 tries.">
+<meta name="twitter:image" content="https://iplguessr.com/og-image.png">
+
+<!-- JSON-LD Schema -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "IPL Guessr",
+  "url": "https://iplguessr.com",
+  "description": "A free daily cricket puzzle game. Guess the mystery 2026 IPL player in 8 tries using attribute clues — team, country, role, batting hand, age and IPL seasons played.",
+  "applicationCategory": "GameApplication",
+  "genre": "Puzzle",
+  "operatingSystem": "Web",
+  "browserRequirements": "Requires JavaScript",
+  "inLanguage": "en-IN",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "INR"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "IPL Guessr",
+    "url": "https://iplguessr.com"
+  },
+  "image": "https://iplguessr.com/og-image.png"
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
@@ -309,6 +358,27 @@
     .pill .ico{width:14px; height:14px; font-size:.55rem;}
     .arrow{font-size:1em;}
     .correct-badge{font-size:.55rem; padding:2px 6px;}
+  }
+
+  /* ---- About / SEO content section ---- */
+  .about-section{
+    max-width:820px; margin:36px auto 0; padding:0 20px 48px;
+    color:rgba(255,255,255,0.75); font-family:'Nunito',sans-serif;
+    font-size:.93rem; line-height:1.75;
+  }
+  .about-section h2{
+    font-family:'Baloo 2',sans-serif; font-size:1.25rem; font-weight:800;
+    color:#ffd23f; margin:28px 0 8px; letter-spacing:.3px;
+  }
+  .about-section h2:first-child{ margin-top:0; }
+  .about-section p{ margin-bottom:12px; }
+  .about-section ul{ margin:0 0 12px 22px; }
+  .about-section ul li{ margin-bottom:6px; }
+  .about-section a{ color:#ffd23f; text-decoration:none; }
+  .about-section a:hover{ text-decoration:underline; }
+  .about-divider{
+    width:80px; height:3px; background:var(--yellow); border-radius:4px;
+    margin:32px auto 0; opacity:.4;
   }
 </style>
 </head>
@@ -871,5 +941,36 @@ function init(){
 init();
 
 </script>
+
+<div class="about-divider"></div>
+
+<section class="about-section">
+
+  <h2>What is IPL Guessr?</h2>
+  <p>IPL Guessr is a free daily cricket puzzle inspired by Wordle. Every day, a mystery player from the 2026 Indian Premier League season is chosen — your job is to figure out who it is in eight guesses or fewer. If you love the IPL and enjoy a daily brain-teaser, this game was made for you.</p>
+  <p>The game covers all ten IPL 2026 franchises: Chennai Super Kings (CSK), Mumbai Indians (MI), Royal Challengers Bengaluru (RCB), Kolkata Knight Riders (KKR), Sunrisers Hyderabad (SRH), Delhi Capitals (DC), Rajasthan Royals (RR), Gujarat Titans (GT), Lucknow Super Giants (LSG) and Punjab Kings (PBKS).</p>
+
+  <h2>How to Play</h2>
+  <p>Type any IPL player's name into the search box and select them from the dropdown. Each guess reveals seven attribute clues compared against the mystery player:</p>
+  <ul>
+    <li><strong>Team</strong> — which IPL franchise they play for.</li>
+    <li><strong>Country</strong> — their nationality. A yellow result means same continent, different country.</li>
+    <li><strong>Role</strong> — Batter, All-Rounder, Fast Bowler or Spin Bowler. Yellow means a closely related role.</li>
+    <li><strong>Bat Hand</strong> — right-handed or left-handed.</li>
+    <li><strong>Age</strong> — green if exact, yellow if within 3 years, with an arrow showing older or younger.</li>
+    <li><strong>Cap Status</strong> — whether they have played international cricket for their country.</li>
+    <li><strong>Seasons</strong> — total IPL seasons played. Yellow if within 3, with a direction arrow.</li>
+  </ul>
+  <p>Green means an exact match. Yellow means close but not exact. Grey means no match at all. Use the clues to narrow down the player and solve the puzzle. Come back tomorrow for a new challenge — a fresh player is selected every day.</p>
+
+  <h2>About the 2026 IPL Season</h2>
+  <p>The 2026 Indian Premier League features the full rosters of all ten teams, including international superstars and domestic talent from across India. The answer pool covers over 150 players spanning every franchise, from seasoned veterans with 15 or more IPL seasons under their belt to exciting young stars in their first few years in the league.</p>
+  <p>Player data includes team, nationality, role, batting hand, date of birth, international cap status and total IPL seasons played — all sourced from the confirmed 2026 IPL squads. The puzzle resets daily, so there is always a new player to discover.</p>
+
+  <h2>Tips for Solving the Puzzle</h2>
+  <p>Start with a player who covers a good spread of attributes — an experienced Indian All-Rounder from a big franchise is often a useful opening guess. Use the continent clue on Country to quickly narrow down international players. The Seasons arrow tells you whether the mystery player is more or less experienced than your guess, which helps eliminate entire generations of players in a single move. Track your streak in the Stats panel and share your result with friends after you solve it.</p>
+
+</section>
+
 </body>
 </html>
