@@ -47,6 +47,12 @@ function getDayIndex(){
   return Math.floor((today - START_DATE) / 86400000);
 }
 function getAnswer(){
+  // TEMP OVERRIDE — Virat Kohli for all of 2026-06-24 IST (until midnight)
+  const _ist = new Date(Date.now() + (5.5 * 60 * 60 * 1000));
+  if(_ist.toISOString().slice(0,10) === '2026-06-24'){
+    return PLAYERS.find(p => p.n === 'Virat Kohli');
+  }
+  // END TEMP OVERRIDE
   const day = getDayIndex();
   const idx = ORDER[((day % ORDER.length) + ORDER.length) % ORDER.length];
   return PLAYERS[idx];
